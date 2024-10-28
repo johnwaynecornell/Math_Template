@@ -51,20 +51,19 @@ void multiply_any(int digits, LowType *a, LowType *b, LowType *c)
         for (didb = 0; didb < digits; didb++) {
             HighType v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];
             LowType low = (LowType) v;
-            LowType high = (LowType) (v >> (sizeof(LowType)*8));
 
             c[dida + didb] = low;
-            carry = high;
+            carry = (LowType) (v >> (sizeof(LowType)*8));
         }
 
-        for (; didb < digits * 2; didb++)
+        for (; carry != 0 && didb < digits * 2; didb++)
         {
             HighType v = carry + c[dida + didb];
             LowType low = (LowType) v;
-            LowType high = (LowType) (v >> (sizeof(LowType)*8));
 
             c[dida + didb] = low;
-            carry = high;
+            carry = (LowType) (v >> (sizeof(LowType)*8));
+
         }
     }
 }
