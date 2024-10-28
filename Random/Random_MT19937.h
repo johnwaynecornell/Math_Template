@@ -7,6 +7,8 @@
 
 #include "Random_Generator.h"
 
+/* NOTE TO READER */ //The utility of this structure can best be made by extending it to preserve and load state ensuring perfect repeatability from state preserved in a repeatable process or branch.
+
 class Random_MT19937 : public Random_Generator
 {
 private:
