@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-//Note to reader the function is not optimized and is for illustration purpose
+//Note, this function is not optimized and is for illustration purpose
 //  see void multiply_any(int digits, LowType *a, LowType *b, LowType *c) which handles zeros more like multiplication in actual preactice
 void multiply_uint32_t(int digits, uint32_t *a, uint32_t *b, uint32_t *c)
 {
@@ -64,11 +64,10 @@ void multiply_any(int digits, LowType *a, LowType *b, LowType *c)
 
             if (b[didb] != 0) {
                 v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];;
-                carry = (LowType) (v >> (sizeof(LowType)*8));
             } else {
-                v = carry;
-                carry = 0;
+                v = carry + c[dida + didb];
             }
+            carry = (LowType) (v >> (sizeof(LowType)*8));
             c[dida + didb] = (LowType) v;
 
         }
