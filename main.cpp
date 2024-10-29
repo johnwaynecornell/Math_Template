@@ -9,28 +9,27 @@ void multiply_uint32_t(int digits, uint32_t *a, uint32_t *b, uint32_t *c)
 
     for (int didc=0; didc < digits*2; didc++) c[didc] = 0;
 
+    //for each digit in a
     for (int dida=0; dida<digits; dida++) {
         int didb;
 
         carry = 0;
 
+        //multiply with the digits in b
         for (didb = 0; didb < digits; didb++) {
             uint64_t v = carry + a[dida] * (uint64_t) b[didb] + c[dida + didb];
-            uint32_t low = (uint32_t) v;
-            uint32_t high = (uint32_t) (v >> 32);
 
-            c[dida + didb] = low;
-            carry = high;
+            c[dida + didb] = (uint32_t) v;
+            carry = (uint32_t) (v >> 32);
         }
 
-        for (; didb < digits * 2; didb++)
+        //process the carry
+        for (; carry != 0 && didb < digits * 2; didb++)
         {
             uint64_t v = carry + c[dida + didb];
-            uint32_t low = (uint32_t) v;
-            uint32_t high = (uint32_t) (v >> 32);
 
-            c[dida + didb] = low;
-            carry = high;
+            c[dida + didb] = (uint32_t) v;
+            carry = (uint32_t) (v >> 32);
         }
     }
 }
@@ -43,19 +42,21 @@ void multiply_any(int digits, LowType *a, LowType *b, LowType *c)
 
     for (int didc=0; didc < digits*2; didc++) c[didc] = 0;
 
+    //for each digit in a
     for (int dida=0; dida<digits; dida++) {
         int didb;
 
         carry = 0;
 
+        //multiply with the digits in b
         for (didb = 0; didb < digits; didb++) {
-            HighType v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];
-            LowType low = (LowType) v;
+            HighType v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];;
 
-            c[dida + didb] = low;
+            c[dida + didb] = (LowType) v;
             carry = (LowType) (v >> (sizeof(LowType)*8));
         }
 
+        //process the carry
         for (; carry != 0 && didb < digits * 2; didb++)
         {
             HighType v = carry + c[dida + didb];
