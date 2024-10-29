@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstdlib>
 
+//Note to reader the function is not optimized and is for illustration purpose
+//  see void multiply_any(int digits, LowType *a, LowType *b, LowType *c) which handles zeros more like multiplication in actual preactice
 void multiply_uint32_t(int digits, uint32_t *a, uint32_t *b, uint32_t *c)
 {
     uint32_t carry;
@@ -19,8 +21,11 @@ void multiply_uint32_t(int digits, uint32_t *a, uint32_t *b, uint32_t *c)
         for (didb = 0; didb < digits; didb++) {
             uint64_t v = carry + a[dida] * (uint64_t) b[didb] + c[dida + didb];
 
-            c[dida + didb] = (uint32_t) v;
-            carry = (uint32_t) (v >> 32);
+            uint32_t low = (uint32_t) v; //store the low half
+            uint32_t high = (uint32_t) v>>32; //store the high half;
+
+            c[dida + didb] = low;
+            carry = high;
         }
 
         //process the carry
@@ -28,8 +33,11 @@ void multiply_uint32_t(int digits, uint32_t *a, uint32_t *b, uint32_t *c)
         {
             uint64_t v = carry + c[dida + didb];
 
-            c[dida + didb] = (uint32_t) v;
-            carry = (uint32_t) (v >> 32);
+            uint32_t low = (uint32_t) v; //store the low half
+            uint32_t high = (uint32_t) v>>32; //store the high half;
+
+            c[dida + didb] = low;
+            carry = high;
         }
     }
 }
@@ -48,21 +56,29 @@ void multiply_any(int digits, LowType *a, LowType *b, LowType *c)
 
         carry = 0;
 
+        if (a[dida] ==0) continue;
+
         //multiply with the digits in b
         for (didb = 0; didb < digits; didb++) {
-            HighType v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];;
+            HighType v;
 
+            if (b[didb] != 0) {
+                v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];;
+                carry = (LowType) (v >> (sizeof(LowType)*8));
+            } else {
+                v = carry;
+                carry = 0;
+            }
             c[dida + didb] = (LowType) v;
-            carry = (LowType) (v >> (sizeof(LowType)*8));
+
         }
 
         //process the carry
         for (; carry != 0 && didb < digits * 2; didb++)
         {
             HighType v = carry + c[dida + didb];
-            LowType low = (LowType) v;
 
-            c[dida + didb] = low;
+            c[dida + didb] = (LowType) v;
             carry = (LowType) (v >> (sizeof(LowType)*8));
 
         }
