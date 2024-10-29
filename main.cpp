@@ -9,34 +9,34 @@ void multiply_uint32_t(int digits, uint32_t *a, uint32_t *b, uint32_t *c)
 {
     uint32_t carry;
 
-    for (int didc=0; didc < digits*2; didc++) c[didc] = 0;
+    for (int place_c=0; place_c < digits*2; place_c++) c[place_c] = 0;
 
     //for each digit in a
-    for (int dida=0; dida<digits; dida++) {
-        int didb;
+    for (int place_a=0; place_a<digits; place_a++) {
+        int place_b;
 
         carry = 0;
 
         //multiply with the digits in b
-        for (didb = 0; didb < digits; didb++) {
-            uint64_t v = carry + a[dida] * (uint64_t) b[didb] + c[dida + didb];
+        for (place_b = 0; place_b < digits; place_b++) {
+            uint64_t v = carry + a[place_a] * (uint64_t) b[place_b] + c[place_a + place_b];
 
             uint32_t low = (uint32_t) v; //store the low half
             uint32_t high = (uint32_t) v>>32; //store the high half;
 
-            c[dida + didb] = low;
+            c[place_a + place_b] = low;
             carry = high;
         }
 
         //process the carry
-        for (; carry != 0 && didb < digits * 2; didb++)
+        for (; carry != 0 && place_b < digits * 2; place_b++)
         {
-            uint64_t v = carry + c[dida + didb];
+            uint64_t v = carry + c[place_a + place_b];
 
             uint32_t low = (uint32_t) v; //store the low half
             uint32_t high = (uint32_t) v>>32; //store the high half;
 
-            c[dida + didb] = low;
+            c[place_a + place_b] = low;
             carry = high;
         }
     }
@@ -48,36 +48,36 @@ void multiply_any(int digits, LowType *a, LowType *b, LowType *c)
 {
     LowType carry;
 
-    for (int didc=0; didc < digits*2; didc++) c[didc] = 0;
+    for (int place_c=0; place_c < digits*2; place_c++) c[place_c] = 0;
 
     //for each digit in a
-    for (int dida=0; dida<digits; dida++) {
-        int didb;
+    for (int place_a=0; place_a<digits; place_a++) {
+        int place_b;
 
         carry = 0;
 
-        if (a[dida] ==0) continue;
+        if (a[place_a] ==0) continue;
 
         //multiply with the digits in b
-        for (didb = 0; didb < digits; didb++) {
+        for (place_b = 0; place_b < digits; place_b++) {
             HighType v;
 
-            if (b[didb] != 0) {
-                v = carry + a[dida] * (HighType) b[didb] + c[dida + didb];;
+            if (b[place_b] != 0) {
+                v = carry + a[place_a] * (HighType) b[place_b] + c[place_a + place_b];;
             } else {
-                v = carry + c[dida + didb];
+                v = carry + c[place_a + place_b];
             }
             carry = (LowType) (v >> (sizeof(LowType)*8));
-            c[dida + didb] = (LowType) v;
+            c[place_a + place_b] = (LowType) v;
 
         }
 
         //process the carry
-        for (; carry != 0 && didb < digits * 2; didb++)
+        for (; carry != 0 && place_b < digits * 2; place_b++)
         {
-            HighType v = carry + c[dida + didb];
+            HighType v = carry + c[place_a + place_b];
 
-            c[dida + didb] = (LowType) v;
+            c[place_a + place_b] = (LowType) v;
             carry = (LowType) (v >> (sizeof(LowType)*8));
 
         }
