@@ -1,0 +1,384 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        h1 {
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+        }
+        p {
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #c0f0s0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+
+        pre {
+            background-color: #c0d8ff;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        code {
+                background-color: #c0d8ff; /* Your preferred background color */
+                font-family: 'Courier New', Courier, monospace;
+                padding: 8px;
+                display: block; /* Ensure the code block takes up its own space */
+                border: 1px solid #ddd; /* Optional border for clarity */
+        }
+
+        pre, code {
+            white-space: pre-wrap; /* Preserve newlines and wrap text */
+            word-wrap: break-word; /* Enable breaking long words */
+        }
+    </style>
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+</head>
+
+<body>
+	<p>Occasionally, when system's built-in precision or range is insufficient for specific tasks, numerical techniques can extend their capabilities. Extending precision is not as daunting as it might seem, given familiarity with the underlying algorithms—multiplication being a prime example, a process taught as early as grade school. This page presents a 'perfectly' optimized implementation (minimal operations required for the task) of the Big Multiplication algorithm, achieving peak efficiency.</p>
+	<p>Below, the source code is showcased in C++ using templates, providing a practical demonstration through the 'pudding' of Big Multiplication.</p>
+	<p>Traditionally, multiplication on paper involves multiplying the top number by every digit of the bottom number and summing the results. Similarly, when implemented on a computer, each digit of the bottom number multiplies with the top, and the results accumulate in a sum register. This page illustrates the ultimate optimization of this process, using only a minimal set of variables and an accumulation register, thereby optimizing both computational speed and memory usage.</p>
+	<p>When implementing this algorithm, I started with the knowledge that multiplying two numbers produces a result with as many digits as the sum of the digits of the two numbers. Each pair of digits multiplies to yield a result with at most two digits. Armed with a theory that, given the 'shape' of numbers, I could multiply in place to save time and memory across any radix, I enlisted the help of AI to articulate how it works (text in blue).</p>
+	<div style=" color: #2020FF;">
+		<p>To explain why in-place summation works in this big multiplication algorithm, and its universal applicability across any radix—including binary systems like 2^32—we start by understanding the fundamental principles of arithmetic in various numeral systems, especially focusing on the concept of "carry".</p>
+		<p>Understanding Carry in Different Radices:
+			When multiplying numbers, each digit can potentially produce a value that exceeds the base of the numeral system (or radix). This excess is what we commonly refer to as "carry". The key insight is that the carry from any single digit multiplication in any numeral system can be accommodated by the digits directly adjacent to it.</p>
+		Here’s how it can be broken down:
+		<ol>
+			<li>Single Digit Multiplication: In any radix 𝑅, a single digit multiplied by another single digit yields at most (𝑅−1)×(𝑅−1).</li>
+			<li>Maximum Product: This product is 𝑅^2−2𝑅+1.</li>
+			<li>Handling the Product:
+				<ul>
+					<li>The maximum value that needs to be accommodated in a single position (or "place") in the result is 𝑅−1 from direct multiplication, 𝑅−1 from a possible existing value in the register, and an additional potential 𝑅−1 from a carry from the previous lower position.</li>
+					<li>Therefore, the maximum sum before placing and carrying to the next higher position is 3𝑅−3.</li>
+					<li>This sum splits into a maximum carry of 𝑅−1 to the next higher position, and the maximum value 𝑅−1 that remains in the current position.</li>
+				</ul>
+			</li>
+		</ol>
+		<p>Decimal Example (Radix 10):</p>
+		<ul>
+			<li>Single Digit Multiplication: 9×9=81.</li>
+			<li>Product Handling: 81 can be split as 80+1 where 1 is in the units place, and 80 (or 8×10) is the carry to the tens place. With the maximal value of 9 in the accumulation register, the maximum sum is 90.</li>
+		</ul>
+		<p>Binary Example (Radix 2^32):</p>
+		<ul>
+			<li>Single Digit Multiplication: The maximum product of two 32-bit numbers is
+				(2^32−1)×(2^32−1) = 2^64 − 2^33 + 1.</li>
+			<li>Product Handling: This value requires 64 bits to represent. The lower 32 bits represent the product in the current position.
+				The upper 32 bits represent the carry to the next higher position in the result array.</li>
+		</ul>
+		<p>Universality Across Radices:</p>
+		<ul>
+			<li>The maximum product of two digits is predictable and bounded by the square of the radix.</li>
+			<li>The carry required is bounded by the radix itself.</li>
+		</ul>
+		<p>Thus, by using a carry that is simply the upper half of the product (after accommodating the radix of the current digit), you can always manage to sum in place without needing additional temporary storage. This is why the algorithm uses the upper bits as carry, ensuring efficient use of space and operations. This explanation highlights the mathematical robustness of your algorithm and explains why it successfully handles such operations in place for any given radix. This universality is rooted in the nature of number systems and the properties of multiplication.</p>
+	</div>
+	<p><a href="https://github.com/johnwaynecornell/Math_Template">Here is the full source for the proof of concept on GitHub</a></p>
+	<pre>
+		<code class="language-cpp">
+#include&nbsp;&lt;typeinfo&gt;
+#include&nbsp;&lt;cstdio&gt;
+#include&nbsp;&lt;cstdint&gt;
+#include&nbsp;&lt;cstdlib&gt;
+
+//Note,&nbsp;this&nbsp;function&nbsp;is&nbsp;not&nbsp;optimized&nbsp;and&nbsp;is&nbsp;for&nbsp;illustration&nbsp;purposes
+//&nbsp;&nbsp;see&nbsp;void&nbsp;multiply_any(int&nbsp;digits,&nbsp;LowType&nbsp;*a,&nbsp;LowType&nbsp;*b,&nbsp;LowType&nbsp;*c)&nbsp;which&nbsp;handles&nbsp;zeros&nbsp;more&nbsp;like&nbsp;multiplication&nbsp;in&nbsp;actual&nbsp;practice
+void&nbsp;multiply_uint32_t(int&nbsp;digits,&nbsp;uint32_t&nbsp;*a,&nbsp;uint32_t&nbsp;*b,&nbsp;uint32_t&nbsp;*c)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;uint32_t&nbsp;carry;
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;place_c=0;&nbsp;place_c&nbsp;&lt;&nbsp;digits*2;&nbsp;place_c++)&nbsp;c[place_c]&nbsp;=&nbsp;0;
+
+&nbsp;&nbsp;&nbsp;&nbsp;//for&nbsp;each&nbsp;digit&nbsp;in&nbsp;a
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;place_a=0;&nbsp;place_a&lt;digits;&nbsp;place_a++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;place_b;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry&nbsp;=&nbsp;0;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//multiply&nbsp;with&nbsp;the&nbsp;digits&nbsp;in&nbsp;b
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(place_b&nbsp;=&nbsp;0;&nbsp;place_b&nbsp;&lt;&nbsp;digits;&nbsp;place_b++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;v&nbsp;=&nbsp;carry&nbsp;+&nbsp;a[place_a]&nbsp;*&nbsp;(uint64_t)&nbsp;b[place_b]&nbsp;+&nbsp;c[place_a&nbsp;+&nbsp;place_b];
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint32_t&nbsp;low&nbsp;=&nbsp;(uint32_t)&nbsp;v;&nbsp;//store&nbsp;the&nbsp;low&nbsp;half
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint32_t&nbsp;high&nbsp;=&nbsp;(uint32_t)&nbsp;v&gt;&gt;32;&nbsp;//store&nbsp;the&nbsp;high&nbsp;half;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c[place_a&nbsp;+&nbsp;place_b]&nbsp;=&nbsp;low;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry&nbsp;=&nbsp;high;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//process&nbsp;the&nbsp;carry
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(;&nbsp;carry&nbsp;!=&nbsp;0&nbsp;&amp;&amp;&nbsp;place_b&nbsp;&lt;&nbsp;digits&nbsp;*&nbsp;2;&nbsp;place_b++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;v&nbsp;=&nbsp;carry&nbsp;+&nbsp;c[place_a&nbsp;+&nbsp;place_b];
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint32_t&nbsp;low&nbsp;=&nbsp;(uint32_t)&nbsp;v;&nbsp;//store&nbsp;the&nbsp;low&nbsp;half
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint32_t&nbsp;high&nbsp;=&nbsp;(uint32_t)&nbsp;v&gt;&gt;32;&nbsp;//store&nbsp;the&nbsp;high&nbsp;half;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c[place_a&nbsp;+&nbsp;place_b]&nbsp;=&nbsp;low;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry&nbsp;=&nbsp;high;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+}
+
+
+template&lt;typename&nbsp;LowType,&nbsp;typename&nbsp;HighType&gt;
+void&nbsp;multiply_any(int&nbsp;digits,&nbsp;LowType&nbsp;*a,&nbsp;LowType&nbsp;*b,&nbsp;LowType&nbsp;*c)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;LowType&nbsp;carry;
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;place_c=0;&nbsp;place_c&nbsp;&lt;&nbsp;digits*2;&nbsp;place_c++)&nbsp;c[place_c]&nbsp;=&nbsp;0;
+
+&nbsp;&nbsp;&nbsp;&nbsp;//for&nbsp;each&nbsp;digit&nbsp;in&nbsp;a
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;place_a=0;&nbsp;place_a&lt;digits;&nbsp;place_a++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;place_b;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry&nbsp;=&nbsp;0;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(a[place_a]&nbsp;==0)&nbsp;continue;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//multiply&nbsp;with&nbsp;the&nbsp;digits&nbsp;in&nbsp;b
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(place_b&nbsp;=&nbsp;0;&nbsp;place_b&nbsp;&lt;&nbsp;digits;&nbsp;place_b++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HighType&nbsp;v;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(b[place_b]&nbsp;!=&nbsp;0)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;=&nbsp;carry&nbsp;+&nbsp;a[place_a]&nbsp;*&nbsp;(HighType)&nbsp;b[place_b]&nbsp;+&nbsp;c[place_a&nbsp;+&nbsp;place_b];;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;=&nbsp;carry&nbsp;+&nbsp;c[place_a&nbsp;+&nbsp;place_b];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry&nbsp;=&nbsp;(LowType)&nbsp;(v&nbsp;&gt;&gt;&nbsp;(sizeof(LowType)*8));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c[place_a&nbsp;+&nbsp;place_b]&nbsp;=&nbsp;(LowType)&nbsp;v;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//process&nbsp;the&nbsp;carry
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(;&nbsp;carry&nbsp;!=&nbsp;0&nbsp;&amp;&amp;&nbsp;place_b&nbsp;&lt;&nbsp;digits&nbsp;*&nbsp;2;&nbsp;place_b++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HighType&nbsp;v&nbsp;=&nbsp;carry&nbsp;+&nbsp;c[place_a&nbsp;+&nbsp;place_b];
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c[place_a&nbsp;+&nbsp;place_b]&nbsp;=&nbsp;(LowType)&nbsp;v;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry&nbsp;=&nbsp;(LowType)&nbsp;(v&nbsp;&gt;&gt;&nbsp;(sizeof(LowType)*8));
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+}
+
+class&nbsp;Node
+{
+public:
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;std::type_info&nbsp;*ti;
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;name[1024];
+
+&nbsp;&nbsp;&nbsp;&nbsp;Node&nbsp;*Next&nbsp;=&nbsp;nullptr;
+
+&nbsp;&nbsp;&nbsp;&nbsp;Node(const&nbsp;std::type_info&nbsp;*ti,&nbsp;const&nbsp;char&nbsp;*name)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this-&gt;ti&nbsp;=&nbsp;ti;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;i;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(i=0;&nbsp;i&lt;1023;&nbsp;i++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(name[i]&nbsp;==&nbsp;0)&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this-&gt;name[i]&nbsp;=&nbsp;name[i];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this-&gt;name[i]&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;char&nbsp;*GetName(const&nbsp;std::type_info&nbsp;*t)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(Node&nbsp;*N&nbsp;=&nbsp;this;&nbsp;N&nbsp;!=&nbsp;nullptr;&nbsp;N&nbsp;=&nbsp;N-&gt;Next)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(N-&gt;ti&nbsp;==&nbsp;t)&nbsp;return&nbsp;N-&gt;name;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;nullptr;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+};
+
+Node&nbsp;Head(NULL,&nbsp;"");
+
+template&lt;typename&nbsp;LowType,&nbsp;typename&nbsp;HighType&gt;
+void&nbsp;multiply_uint64_t(uint64_t&nbsp;a,&nbsp;uint64_t&nbsp;b)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;digits&nbsp;=&nbsp;sizeof(uint64_t)&nbsp;/&nbsp;sizeof(LowType);
+&nbsp;&nbsp;&nbsp;&nbsp;LowType&nbsp;_a[digits];
+&nbsp;&nbsp;&nbsp;&nbsp;LowType&nbsp;_b[digits];
+&nbsp;&nbsp;&nbsp;&nbsp;LowType&nbsp;_c[digits*2];
+
+&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;a_q&nbsp;=&nbsp;a;
+&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;b_q&nbsp;=&nbsp;b;
+
+&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;int&nbsp;shift&nbsp;=&nbsp;sizeof(LowType)&lt;&lt;3;
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;digit=0;&nbsp;digit&nbsp;&lt;&nbsp;digits;&nbsp;digit++)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_a[digit]&nbsp;=&nbsp;(LowType)&nbsp;a_q;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_b[digit]&nbsp;=&nbsp;(LowType)&nbsp;b_q;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a_q&nbsp;&gt;&gt;=&nbsp;shift;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b_q&nbsp;&gt;&gt;=&nbsp;shift;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;multiply_any&lt;LowType,HighType&gt;(digits,&nbsp;_a,&nbsp;_b,&nbsp;_c);
+
+&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;FormatString[1024];
+
+&nbsp;&nbsp;&nbsp;&nbsp;sprintf(FormatString,&nbsp;"%s%ldX",&nbsp;"%0",&nbsp;sizeof(LowType)*2);
+
+&nbsp;&nbsp;&nbsp;&nbsp;printf("%s:&nbsp;",&nbsp;Head.GetName(&amp;typeid(LowType)));
+&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;i=digits-1;&nbsp;i&gt;=0;&nbsp;i--)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf(FormatString,&nbsp;(int)&nbsp;_a[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;printf("&nbsp;*&nbsp;");
+&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;i=digits-1;&nbsp;i&gt;=0;&nbsp;i--)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf(FormatString,&nbsp;(int)&nbsp;_b[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;printf("&nbsp;=&nbsp;");
+&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;i=(digits&lt;&lt;1)-1;&nbsp;i&gt;=0;&nbsp;i--)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf(FormatString,&nbsp;(int)&nbsp;_c[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;printf("\n");
+&nbsp;&nbsp;&nbsp;&nbsp;fflush(stdout);
+
+}
+
+void&nbsp;test(uint64_t&nbsp;a,&nbsp;uint64_t&nbsp;b)
+{
+&nbsp;&nbsp;&nbsp;&nbsp;multiply_uint64_t&lt;uint8_t,&nbsp;uint16_t&gt;(a,&nbsp;b);
+&nbsp;&nbsp;&nbsp;&nbsp;multiply_uint64_t&lt;uint16_t,&nbsp;uint32_t&gt;(a,&nbsp;b);
+&nbsp;&nbsp;&nbsp;&nbsp;multiply_uint64_t&lt;uint32_t,&nbsp;uint64_t&gt;(a,&nbsp;b);
+
+}
+
+uint64_t&nbsp;Getuint64_t()
+{
+&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;R&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;i=0;&nbsp;i&nbsp;&lt;&nbsp;8;&nbsp;i++)
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((unsigned&nbsp;char&nbsp;*)&amp;R)[i]&nbsp;=&nbsp;rand()&nbsp;%&nbsp;0xFF;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;R;
+}
+
+int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;**argv)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;printf("%X\n",&nbsp;0xFF&nbsp;*&nbsp;0xFF);
+
+&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;a&nbsp;=&nbsp;0x1000000010000001ul;
+&nbsp;&nbsp;&nbsp;&nbsp;uint64_t&nbsp;b&nbsp;=&nbsp;0x2000000000000002ul;
+
+&nbsp;&nbsp;&nbsp;&nbsp;Node&nbsp;*Cur&nbsp;=&nbsp;&amp;Head;
+
+&nbsp;&nbsp;&nbsp;&nbsp;Node&nbsp;*q;
+
+&nbsp;&nbsp;&nbsp;&nbsp;q&nbsp;=&nbsp;new&nbsp;Node(&amp;typeid(uint8_t),&nbsp;"uint8_t");
+&nbsp;&nbsp;&nbsp;&nbsp;Cur&nbsp;=&nbsp;Cur-&gt;Next&nbsp;=&nbsp;q;
+&nbsp;&nbsp;&nbsp;&nbsp;q&nbsp;=&nbsp;new&nbsp;Node(&amp;typeid(uint16_t),&nbsp;"uint16_t");
+&nbsp;&nbsp;&nbsp;&nbsp;Cur&nbsp;=&nbsp;Cur-&gt;Next&nbsp;=&nbsp;q;
+&nbsp;&nbsp;&nbsp;&nbsp;q&nbsp;=&nbsp;new&nbsp;Node(&amp;typeid(uint32_t),&nbsp;"uint32_t");
+&nbsp;&nbsp;&nbsp;&nbsp;Cur&nbsp;=&nbsp;Cur-&gt;Next&nbsp;=&nbsp;q;
+&nbsp;&nbsp;&nbsp;&nbsp;q&nbsp;=&nbsp;new&nbsp;Node(&amp;typeid(uint64_t),&nbsp;"uint64_t");
+&nbsp;&nbsp;&nbsp;&nbsp;Cur&nbsp;=&nbsp;Cur-&gt;Next&nbsp;=&nbsp;q;
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;test(a,b);
+
+&nbsp;&nbsp;&nbsp;&nbsp;srand(0);
+
+&nbsp;&nbsp;&nbsp;&nbsp;printf("run&nbsp;carry\n");
+&nbsp;&nbsp;&nbsp;&nbsp;test(0xFFFFFFFFFFFFFFFFul,&nbsp;0xFFFFFFFFFFFFFFFFul);
+
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(int&nbsp;i=0;&nbsp;i&lt;4;&nbsp;i++)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf("run&nbsp;%d\n",&nbsp;i);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a&nbsp;=&nbsp;Getuint64_t();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;Getuint64_t();
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;test(a,&nbsp;b);
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;0;
+}
+		</code>
+	</pre>
+	<h3>Hear is the output</h3>
+	<p>Hear the output shows perfect consistency at different widths with various edge cases.</p>
+	<p>
+		<code class="language-plaintext">
+FE01
+uint8_t:&nbsp;1000000010000001&nbsp;*&nbsp;2000000000000002&nbsp;=&nbsp;02000000020000004000000020000002
+uint16_t:&nbsp;1000000010000001&nbsp;*&nbsp;2000000000000002&nbsp;=&nbsp;02000000020000004000000020000002
+uint32_t:&nbsp;1000000010000001&nbsp;*&nbsp;2000000000000002&nbsp;=&nbsp;02000000020000004000000020000002
+run&nbsp;carry
+uint8_t:&nbsp;FFFFFFFFFFFFFFFF&nbsp;*&nbsp;FFFFFFFFFFFFFFFF&nbsp;=&nbsp;FFFFFFFFFFFFFFFE0000000000000001
+uint16_t:&nbsp;FFFFFFFFFFFFFFFF&nbsp;*&nbsp;FFFFFFFFFFFFFFFF&nbsp;=&nbsp;FFFFFFFFFFFFFFFE0000000000000001
+uint32_t:&nbsp;FFFFFFFFFFFFFFFF&nbsp;*&nbsp;FFFFFFFFFFFFFFFF&nbsp;=&nbsp;FFFFFFFFFFFFFFFE0000000000000001
+run&nbsp;0
+uint8_t:&nbsp;FCF1BE5355A297A3&nbsp;*&nbsp;E2E91314526B79F9&nbsp;=&nbsp;E033B4E5D0E5293D33AA53CBBBF2888B
+uint16_t:&nbsp;FCF1BE5355A297A3&nbsp;*&nbsp;E2E91314526B79F9&nbsp;=&nbsp;E033B4E5D0E5293D33AA53CBBBF2888B
+uint32_t:&nbsp;FCF1BE5355A297A3&nbsp;*&nbsp;E2E91314526B79F9&nbsp;=&nbsp;E033B4E5D0E5293D33AA53CBBBF2888B
+run&nbsp;1
+uint8_t:&nbsp;275708561F8E512D&nbsp;*&nbsp;75778252D0D405A7&nbsp;=&nbsp;120D244B28A86994EB9FBD0626B0D55B
+uint16_t:&nbsp;275708561F8E512D&nbsp;*&nbsp;75778252D0D405A7&nbsp;=&nbsp;120D244B28A86994EB9FBD0626B0D55B
+uint32_t:&nbsp;275708561F8E512D&nbsp;*&nbsp;75778252D0D405A7&nbsp;=&nbsp;120D244B28A86994EB9FBD0626B0D55B
+run&nbsp;2
+uint8_t:&nbsp;526A3D58ED4A991B&nbsp;*&nbsp;95AD8E684A24D536&nbsp;=&nbsp;302FB558B8439796120709E874EBC2B2
+uint16_t:&nbsp;526A3D58ED4A991B&nbsp;*&nbsp;95AD8E684A24D536&nbsp;=&nbsp;302FB558B8439796120709E874EBC2B2
+uint32_t:&nbsp;526A3D58ED4A991B&nbsp;*&nbsp;95AD8E684A24D536&nbsp;=&nbsp;302FB558B8439796120709E874EBC2B2
+run&nbsp;3
+uint8_t:&nbsp;6CDD8CC4B5353C5F&nbsp;*&nbsp;CF59B4B4E23D3211&nbsp;=&nbsp;582D4AB1B1DFF16658F5303BAEF6904F
+uint16_t:&nbsp;6CDD8CC4B5353C5F&nbsp;*&nbsp;CF59B4B4E23D3211&nbsp;=&nbsp;582D4AB1B1DFF16658F5303BAEF6904F
+uint32_t:&nbsp;6CDD8CC4B5353C5F&nbsp;*&nbsp;CF59B4B4E23D3211&nbsp;=&nbsp;582D4AB1B1DFF16658F5303BAEF6904F
+
+Process&nbsp;finished&nbsp;with&nbsp;exit&nbsp;code&nbsp;0
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code>
+
+	</p>
+
+
+
+
+</body>
+</html>
